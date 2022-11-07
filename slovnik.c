@@ -1,3 +1,7 @@
+/* all of the function should work (all of them weren't tesetd yet)
+   @ATTENTION program isn't finished
+*/
+
 /**
  **************************************************************************************************************************
  * 
