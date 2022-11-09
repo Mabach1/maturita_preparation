@@ -7,7 +7,7 @@
  * @date 2022-11-05
  * @brief program je ukazkou pokrocile prace se souborem a retezci na tema slovnik
  * 
- * @attention Program wasn't refactored yet and needs a lot more work. Program dosen't have user menu and function editace() isn't working yet
+ * @attention Program wasn't refactored yet and needs a lot more work. Program dosen't have user menu, all functions work
  * 
  *********************************************************************************************************************************************************
  */
@@ -90,14 +90,28 @@ void velka_na_mala(char slovo[]) {
         slovo[i] += 32;
     }
 }
-// TODO -> funkce, ktera vrati error v pripade, znaku, ktery neni pismeno
+int check_znaky(char slovo[]) {
+    char slovo_f[MAX_LEN];
+    
+    strcpy(slovo_f, slovo);
+
+    velka_na_mala(slovo_f);
+
+    for (int i = 0; i < sizeof(slovo_f); i++) {
+        if ((slovo_f[i] < 'a' || slovo_f[i] > 'z') && (slovo_f[i] < 'A' || slovo_f[i] > 'Z')) {
+            return ERROR;
+        }
+    }
+
+    return SUCCES;
+}
 /**
  * @brief zahlasi error v pripade, ze soubor se nevitvoril nebo neexistueje
  * 
  * @param soubor se kterym chceme pracovat
  * @return ERROR/SUCCES
  */
-int check_file(FILE *soubor) {
+int check_file_for_null(FILE *soubor) {
     if (NULL == soubor) {
         printf("slovnki je prazdny");
         return ERROR;
@@ -115,15 +129,15 @@ int check_file(FILE *soubor) {
 int nachazi_se (char slovo[]) {
     char radek[LINE_LEN];
 
-    FILE *soubor = fopen("/slovnik.txt", "r");
+    FILE *soubor = fopen("slovnik.txt", "r");
 
     while (fgets(radek, LINE_LEN, soubor) != NULL) {
-        if (strstr(radek, slovo) != NULL) return SUCCES;
+        if (strstr(radek, slovo) != NULL) return ERROR;
     }
 
     fclose(soubor);
 
-    return ERROR;
+    return SUCCES;
 }
 /**
  * @brief importuje data ze souboru do pole
@@ -235,7 +249,7 @@ void vypis_slovniku_cely() {
 void vypis_slovniku_lekce(char cislo_lekce_in[]) {
     FILE *soubor = fopen("slovnik.txt", "r");
 
-    if (check_file(soubor)) {
+    if (check_file_for_null(soubor)) {
         return;
     }
  
@@ -253,6 +267,13 @@ void vypis_slovniku_lekce(char cislo_lekce_in[]) {
 
     fclose(soubor);
 }
+/**
+ * @brief funcke prelozi nami vlozene slovo
+ * 
+ * Pri vstupu nemusi byt zpecifikovano, zda se jedna o ceske nebo anglicke slovo
+ * 
+ * @param slovo toto chce uzivatel prelozit
+ */
 void preklad_slova(char slovo[]) {
     if (nachazi_se(slovo)) {
         printf("Slovo se nenachazi ve slovniku");
@@ -263,7 +284,7 @@ void preklad_slova(char slovo[]) {
 
     FILE *soubor = fopen("slovnik.txt", "r");
 
-    if (check_file(soubor)) return;
+    if (check_file_for_null(soubor)) return;
 
     while (fgets(radek, LINE_LEN, soubor) != NULL) {
         char *slovo_en = strtok(radek, "|");
@@ -279,10 +300,18 @@ void preklad_slova(char slovo[]) {
 
     fclose(soubor);
 }
+/**
+ * @brief 
+ * 
+ * @param slovo_en 
+ * @param slovo_cs 
+ * @param cislo_lekce 
+ */
 void pridat_do_slovniku(char slovo_en[], char slovo_cs[], char cislo_lekce[]) {
     char slovo_en_f[MAX_LEN];
     char slovo_cs_f[MAX_LEN];
 
+    /* kdybychom do funkce velka_na_mala() vlozili uzivatelem zadana slova, zmenili by se coz je neco ceho se chceme vyvarovat */
     strcpy(slovo_en_f, slovo_en);
     strcpy(slovo_cs_f, slovo_cs);
 
@@ -291,7 +320,7 @@ void pridat_do_slovniku(char slovo_en[], char slovo_cs[], char cislo_lekce[]) {
 
     FILE *soubor = fopen("slovnik.txt", "a");
 
-    if (nachazi_se(slovo_en) || nachazi_se(slovo_cs)) {
+    if (nachazi_se(slovo_en_f) && nachazi_se(slovo_cs_f)) {
         printf("slovo se uz nachazi ve slovniku");
         return;
     }
@@ -490,10 +519,10 @@ void editace(char slovo[]) {
 }
 // #endif
 int main(void) {
-//     pridat_do_slovniku("orange", "pomeranc", "3");
-//     pridat_do_slovniku("cucmber", "okurka", "2");
-//     pridat_do_slovniku("radish", "turin", "1");
-    // pridat_do_slovniku("apple", "jablko", "3");
+    // pridat_do_slovniku("orange", "pomeranc", "3");
+    // pridat_do_slovniku("cucmber", "okurka", "2");
+    // pridat_do_slovniku("radish", "turin", "1");
+    pridat_do_slovniku("apple", "jablko", "3");
     // odstraneni("radish");
 
 
@@ -503,7 +532,10 @@ int main(void) {
 
     // preklad_slova("apple");
 
-    vypis_slovniku_cely();
+    // pridat_do_slovniku("pear", "hruska", "2");
+
+    // vypis_slovniku_cely();
+    // editace("apple");
     // vypis_slovniku_lekce("3");
 
 
