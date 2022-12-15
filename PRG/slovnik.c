@@ -2,7 +2,7 @@
  ********************************************************************************************************************************************************
  * @file slovnik.c
  * @author Matej Baliga
- * @version final a.k.a. ready for MATURITA
+ * @version final a.k.a. ready for MATURITA (not so much, actually)
  * @date 2022-11-05
  * @brief program je ukazkou pokrocile prace se souborem a retezci na tema slovnik
  * 
