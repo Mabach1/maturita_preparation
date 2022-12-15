@@ -1,6 +1,5 @@
 /**
  ********************************************************************************************************************************************************
- * 
  * @file slovnik.c
  * @author Matej Baliga
  * @version final a.k.a. ready for MATURITA
@@ -17,8 +16,8 @@
 #include <string.h>         // funkce pro prace s retezcem (strcpy(), strcmp(), ...)
 #include <time.h>           // pro nahondne generovani
 
-#define ERROR       1
-#define SUCCES      0
+#define ERROR        1
+#define SUCCESS      0
 
 #define MAX_LEN     32      // maximalni delka vstupniho retezce
 #define LINE_LEN    80      // maximalni delka nacitaneho radku souboru
@@ -33,7 +32,7 @@ typedef struct data {
     char slovo_en[MAX_LEN];
     char slovo_cs[MAX_LEN];
     char cislo_lekce[MAX_LEN];
-} data_t;
+} slovo_t;
 /**
  * @brief spocita pocet slov ve slovniku
  * 
@@ -90,6 +89,13 @@ void velka_na_mala(char slovo[]) {
         slovo[i] += 32;
     }
 }
+/**
+ * @brief zkontroluje, zda uzivatelsky input(slovo) neobsahuje neco jineho krom pismen
+ * 
+ * @param slovo uzivatelsky input
+ * @return ERROR = v inputu se nachazi i neco jineho krom pismen
+ * @return SUCCESS = inputem jsou pouze pismena
+ */
 int check_znaky(char slovo[]) {
     char slovo_f[MAX_LEN];
     
@@ -97,26 +103,26 @@ int check_znaky(char slovo[]) {
 
     velka_na_mala(slovo_f);
 
-    for (int i = 0; i < sizeof(slovo_f); i++) {
+    for (int i = 0; i < strlen(slovo_f); i++) {
         if ((slovo_f[i] < 'a' || slovo_f[i] > 'z') && (slovo_f[i] < 'A' || slovo_f[i] > 'Z')) {
             return ERROR;
         }
     }
 
-    return SUCCES;
+    return SUCCESS;
 }
 /**
  * @brief zahlasi error v pripade, ze soubor se nevitvoril nebo neexistueje
  * 
  * @param soubor se kterym chceme pracovat
- * @return ERROR/SUCCES
+ * @return ERROR/SUCCESS
  */
 int check_file_for_null(FILE *soubor) {
     if (NULL == soubor) {
         printf("slovnki je prazdny");
         return ERROR;
     }
-    return SUCCES;
+    return SUCCESS;
 }
 /**
  * @brief rekne zda se slovo v souboru nachzi nebo ne
@@ -124,7 +130,7 @@ int check_file_for_null(FILE *soubor) {
  * Funkci pouzivame, abychom se vyvarovali duplikatum ve slovniku
  * 
  * @param slovo ktere v souboru hledame
- * @return ERROR/SUCCES
+ * @return ERROR/SUCCESS
  */
 int nachazi_se (char slovo[]) {
     char radek[LINE_LEN];
@@ -137,14 +143,56 @@ int nachazi_se (char slovo[]) {
 
     fclose(soubor);
 
-    return SUCCES;
+    return SUCCESS;
+}
+void vypis_lekci(int lekce[]) {
+    FILE *soubor = fopen("slovnik.txt", "r");
+    
+    char radek[LINE_LEN];
+    int i = 0;
+
+    while (fgets(radek, LINE_LEN, soubor) != NULL) {
+        char *slovo = strtok(radek, "|");
+        slovo = strtok(NULL, "|");
+        char *cislo_lekce = strtok(NULL, "|");
+
+        int cislo_lekce_int = atoi(cislo_lekce);
+
+        if (0 == i) {
+            printf("%s\n", cislo_lekce);
+            lekce[i] = cislo_lekce_int;
+            i++;
+            continue;
+        }
+
+        int jiz_vypsano = 0;
+
+        for (int j = 0; j < i+1; j++) {
+            if (cislo_lekce_int == lekce[i]) {
+                jiz_vypsano = 1;
+                break;
+            }
+        }
+
+        if (jiz_vypsano == 1) {
+            continue;
+        }
+
+        printf("%s\n", cislo_lekce);
+
+        lekce[i] = cislo_lekce_int;
+        i++;
+        jiz_vypsano = 0 ;
+    }
+
+    fclose(soubor);
 }
 /**
  * @brief importuje data ze souboru do pole
  * 
  * @param in_out_pole do tohoto pole budou ulozeny data ze souboru
  */
-void pull_content_from_file(data_t in_out_pole[]) {
+void pull_content_from_file(slovo_t in_out_pole[]) {
     FILE *soubor = fopen("slovnik.txt", "r");
 
     char radek[LINE_LEN];
@@ -187,24 +235,24 @@ int strcmp_numbers(char cislo_1_char[], char cislo_2_char[]) {
     if (cislo_1 > cislo_2)  return   1; 
 }
 /**
- * @brief zkopiruje data z pole typu data_t do jineho pole typu data_t
+ * @brief zkopiruje data z pole typu slovo_t do jineho pole typu slovo_t
  * 
  * @param pole_1    pole, do ktereho jsou data kopirovana
  * @param pole_2    pole, z ktereho jsou data kopirovana
  * @param index_1   index prvniho pole, do ktereho kopirujeme data
  * @param index_2   index druheho pole, ze ktereho data kopirujeme
  */
-void cpy_data(data_t pole_1[], data_t pole_2[], int index_1, int index_2) {
+void cpy_data(slovo_t pole_1[], slovo_t pole_2[], int index_1, int index_2) {
     strcpy(pole_1[index_1].slovo_en, pole_2[index_2].slovo_en);
     strcpy(pole_1[index_1].slovo_cs, pole_2[index_2].slovo_cs);
     strcpy(pole_1[index_1].cislo_lekce, pole_2[index_2].cislo_lekce);
 }
 /**
- * @brief prijmene pole typu data_t a seradi je podle cislo_lekce
+ * @brief prijmene pole typu slovo_t a seradi je podle cislo_lekce
  * 
  * @param in_out_pole data z tohoto pole budou serazena
  */
-void serazeni_zaznamu(data_t in_out_pole[]) {
+void serazeni_zaznamu(slovo_t in_out_pole[]) {
     int zamena;
 
     do {
@@ -212,10 +260,8 @@ void serazeni_zaznamu(data_t in_out_pole[]) {
         for (int i = 0; i < pocet_slov_ve_slovniku() - 1; i++) {
             if ((strcmp_numbers(in_out_pole[i].cislo_lekce, in_out_pole[i+1].cislo_lekce) == 1)) {
 
-                /*  pole pomocna nemusi byt polem, ale kvuli charakteristice
-                    funkce cpy_data nam to znatelne ulehci praci
-                */
-                data_t pomocna[1];
+                /*  pole pomocna nemusi byt polem, ale kvuli charakteristice funkce cpy_data nam to znatelne ulehci praci */
+                slovo_t pomocna[1];
             
                 cpy_data(pomocna, in_out_pole, 0, i);
                 cpy_data(in_out_pole, in_out_pole, i, i+1);
@@ -232,7 +278,7 @@ void serazeni_zaznamu(data_t in_out_pole[]) {
  * @note doporucije prohlednout si definice pomocnych funkcich, ktere byly pouzity
  */
 void vypis_slovniku_cely() {
-    data_t zaznamy[pocet_slov_ve_slovniku()];
+    slovo_t zaznamy[pocet_slov_ve_slovniku()];
     
     pull_content_from_file(zaznamy);
     serazeni_zaznamu(zaznamy);
@@ -301,7 +347,7 @@ void preklad_slova(char slovo[]) {
     fclose(soubor);
 }
 /**
- * @brief 
+ * @brief funkce prida slovo, ktere uzivatel zadal do slovniku
  * 
  * @param slovo_en 
  * @param slovo_cs 
@@ -330,9 +376,21 @@ void pridat_do_slovniku(char slovo_en[], char slovo_cs[], char cislo_lekce[]) {
 
     fclose(soubor);
 }
+/**
+ * @brief vypocita prumer  
+ * 
+ * @param pocet_otazek 
+ * @param pocet_bodu 
+ * @return prumer 
+ */
 float hodnoceni_v_procentech(int pocet_otazek, int pocet_bodu) {
     return (pocet_bodu * 100.0) / pocet_otazek;
 }
+/**
+ * @brief otevre soubor "statistiky.txt" a zapise do nej vysledky kazdeho testovani 
+ * 
+ * @param vysledek  
+ */
 void zapis_vysledku(float vysledek) {
     FILE *soubor = fopen("statistiky.txt", "a");
 
@@ -340,9 +398,16 @@ void zapis_vysledku(float vysledek) {
 
     fclose(soubor);
 }
+/**
+ * @brief funkce vyzkousi uzivatele ze slovicek
+ * 
+ * @param cislo_lekce_CHAR slovnik je rozdelen na lekce a uzivatel si muze vybrat, ze ktere chce byt vyzkouseny
+ * @param pocet_otazek 
+ */
 void zkouseni_ze_slovicek(char cislo_lekce_CHAR[], int pocet_otazek) {
     int pocet_otazek_f = pocet_otazek;
 
+    /* osetreni */
     if (0 >= pocet_otazek) {
         printf("zkouseni z niceho\n");
         printf("neco takoveho ti neprojde :)\n");
@@ -365,7 +430,8 @@ void zkouseni_ze_slovicek(char cislo_lekce_CHAR[], int pocet_otazek) {
         char *slovo_en = strtok(radek, "|");
         char *slovo_cs = strtok(NULL, "|");
         char *cislo_lekce_ptr = strtok(NULL, "|");
-
+        
+        /* jestlize slovo ve slovniku neni z lekce, kterou jsme zadali, preskoci zkouseni */
         if (strcmp(cislo_lekce_CHAR, cislo_lekce_ptr)) {
             continue;
         }
@@ -393,6 +459,13 @@ void zkouseni_ze_slovicek(char cislo_lekce_CHAR[], int pocet_otazek) {
 
     fclose(soubor);
 }
+/**
+ * @brief funkce odstrani slovo ze slovniku 
+ * 
+ * funkce pracuje na prinicipu, kdy otevre dva souboru; z prvniho cte a do druheho zapisuje veskery kontent bez toho nami urceneho slova 
+ *
+ *  @param slovo 
+ */
 void odstraneni(char slovo[]) {
     char radek[LINE_LEN];
 
@@ -415,6 +488,11 @@ void odstraneni(char slovo[]) {
     system("del \"slovnik.txt\"");
     system("rename slovnik_temp.txt slovnik.txt");
 }
+/**
+ * @brief funkce vyzkosi uzivatele nahodne
+ * 
+ * @param pocet_otazek z kolika chce byt uzivatel zkouseny
+ */
 void nahodne_zkouseni(int pocet_otazek) {
     if (pocet_slov_ve_slovniku() < pocet_otazek) {
         printf("ve slovniku neni dostatek slov");
@@ -431,6 +509,7 @@ void nahodne_zkouseni(int pocet_otazek) {
     srand((unsigned) time(NULL));
 
     while (fgets(radek, LINE_LEN, soubor) != NULL) {
+        /* generace nahodneho indexu v intervalu <0; pocet slov ve slovniku) */
         int nahodny_index = rand() % pocet_slov_ve_slovniku();
 
         if (index_radku != nahodny_index) {
@@ -467,6 +546,14 @@ void nahrad() {
     system("del \"slovnik.txt\"");
     system("rename slovnik_temp.txt slovnik.txt");
 }
+/**
+ * @brief funcke slouzi pro editaci slova 
+ * 
+ * funcke funguje na stejnem principu jako funkce odstraneni(), jen zde slovo nepreskocime, ale nahradime slovem upravenym
+ * pro hlubsi vysvetleni viz. komentar funkce odstraneni()
+ * 
+ * @param slovo ktere chceme editovat
+ */
 void editace(char slovo[]) {
     if (!nachazi_se(slovo)) {
         printf("slovo se nenachazi ve slovniku.\n");
@@ -517,27 +604,30 @@ void editace(char slovo[]) {
 
     nahrad();
 }
-// #endif
+int nabidka(void) {
+    int vyber;
+
+    printf("0 - ukoncit\n");
+    printf("1 - vypis slovniku\n");
+    printf("0 - ukoncit\n");
+    printf("0 - ukoncit\n");
+    printf("0 - ukoncit\n");
+    printf("0 - ukoncit\n");
+    printf("0 - ukoncit\n");
+
+    scanf("%d", &vyber);
+
+    return vyber;
+}
 int main(void) {
-    // pridat_do_slovniku("orange", "pomeranc", "3");
-    // pridat_do_slovniku("cucmber", "okurka", "2");
-    // pridat_do_slovniku("radish", "turin", "1");
-    pridat_do_slovniku("apple", "jablko", "3");
-    // odstraneni("radish");
+    switch (nabidka()) {
+        case 0: break;
+        case 1 : 
+            vypis_slovniku_cely();
+            break;
+        case 2:
 
-
-    // pridat_do_slovniku("peacock", "pav", "5");
-
-    // zkouseni_ze_slovicek("2", 1);
-
-    // preklad_slova("apple");
-
-    // pridat_do_slovniku("pear", "hruska", "2");
-
-    // vypis_slovniku_cely();
-    // editace("apple");
-    // vypis_slovniku_lekce("3");
-
+    }
 
     return 0;
 }
